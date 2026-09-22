@@ -227,7 +227,7 @@ async function createQuote(req, res) {
       ? 'Your quote has been calculated and sent to your email.'
       : 'Your quote was calculated, but the email could not be sent automatically. Our team has been notified and will follow up.')
     : 'Your quote request was saved. Our team will review it and send you a response.';
-  send(res, quote.offers.length ? 201 : 202, { ok: true, reference: quote.reference, status: quote.status, offers: quote.offers, emailStatus: quote.customerEmail.status, teamNotificationStatus: quote.teamEmail.status, message: customerMessage });
+  send(res, 202, { ok: true, reference: quote.reference, status: quote.status, offers: [], emailStatus: quote.customerEmail.status, teamNotificationStatus: quote.teamEmail.status, message: customerMessage });
 }
 
 async function api(req, res, url) {
