@@ -222,7 +222,12 @@ async function createQuote(req, res) {
   quote.updatedAt = new Date().toISOString();
   await db.collection('quotes').updateOne({ id: quote.id }, { $set: { status: quote.status, teamEmail: quote.teamEmail, customerEmail: quote.customerEmail, closedAt: quote.closedAt || null, updatedAt: quote.updatedAt } });
   console.log('[QUOTE] Final status:', quote.status, 'teamEmail:', quote.teamEmail.status, 'customerEmail:', quote.customerEmail.status);
-  send(res, quote.offers.length ? 201 : 202, { ok: true, reference: quote.reference, status: quote.status, offers: quote.offers, emailStatus: quote.customerEmail.status, teamNotificationStatus: quote.teamEmail.status, message: product.sendEmailImmediately ? (quote.customerEmail.status === 'sent' ? 'Your quote was emailed successfully.' : 'Your request was saved, but the quote email could not be sent. Our team has been notified.') : 'Your quote request was saved. Our team will review and send it to you.' });
+  const customerMessage = product.sendEmailImmediately
+    ? (quote.customerEmail.status === 'sent'
+      ? 'Your quote has been calculated and sent to your email.'
+      : 'Your quote was calculated, but the email could not be sent automatically. Our team has been notified and will follow up.')
+    : 'Your quote request was saved. Our team will review it and send you a response.';
+  send(res, quote.offers.length ? 201 : 202, { ok: true, reference: quote.reference, status: quote.status, offers: quote.offers, emailStatus: quote.customerEmail.status, teamNotificationStatus: quote.teamEmail.status, message: customerMessage });
 }
 
 async function api(req, res, url) {

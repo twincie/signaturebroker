@@ -75,18 +75,12 @@ document.querySelector('.modal-close').addEventListener('click', () => modal.clo
 modal.addEventListener('click', (event) => { if (event.target === modal) modal.close(); });
 modal.addEventListener('close', () => document.body.classList.remove('no-scroll'));
 
-function renderOffers(result) {
+function renderQuoteConfirmation(result) {
+  const message = result.message || (result.emailStatus === 'awaiting-admin' ? 'Your request will be reviewed and we will send you a response.' : 'Your quote request has been received.');
   offersPanel.hidden = false;
-  if (!result.offers?.length) {
-    offersPanel.innerHTML = `<div class="offer-pending"><strong>Quote request received</strong><p>Reference ${result.reference}</p><span>${result.message || 'Our team will review your request and send the quote to your email.'}</span></div>`;
-    quoteDisplay.hidden = false;
-    quoteDisplay.innerHTML = '<h3>Your Quote</h3>';
-    quoteDisplay.appendChild(offersPanel);
-    return;
-  }
-  offersPanel.innerHTML = `<h3>Your quote</h3><p class="quote-reference">Reference ${result.reference}</p><p class="quote-reference">${result.message || 'Your quote request has been saved.'}</p><div class="offer-list">${result.offers.map((offer) => `<article class="offer-card"><div><strong>${offer.plan}</strong></div><b>${new Intl.NumberFormat('en-NG', { style: 'currency', currency: offer.currency || 'NGN', maximumFractionDigits: 0 }).format(offer.premium)}</b>${offer.benefits.length ? `<ul>${offer.benefits.map((benefit) => `<li>${benefit}</li>`).join('')}</ul>` : ''}</article>`).join('')}</div>`;
+  offersPanel.innerHTML = `<div class="offer-pending"><strong>Quote request received</strong><p>Reference ${result.reference}</p><span>${message}</span></div>`;
   quoteDisplay.hidden = false;
-  quoteDisplay.innerHTML = '<h3>Your Quote</h3>';
+  quoteDisplay.innerHTML = '';
   quoteDisplay.appendChild(offersPanel);
 }
 
@@ -104,7 +98,7 @@ form.addEventListener('submit', async (event) => {
     const response = await fetch('/api/quotes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ productId: data.get('product'), name: data.get('name'), phone: data.get('phone'), email: data.get('email'), website: data.get('website'), consent: data.get('consent') === 'on', details }) });
     const result = await response.json();
     if (!response.ok && response.status !== 202) throw new Error(result.error || 'We could not retrieve a quote.');
-    renderOffers(result);
+    renderQuoteConfirmation(result);
     statusEl.textContent = result.message || 'Your quote request has been saved.';
   } catch (error) {
     statusEl.classList.add('error');
