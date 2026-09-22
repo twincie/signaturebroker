@@ -8,7 +8,7 @@ import { MongoClient } from 'mongodb';
 
 const root = fileURLToPath(new URL('.', import.meta.url));
 const publicDir = join(root, 'dist');
-const port = Number(process.env.SIGNATURE_PORT || 3000);
+const port = Number(process.env.PORT || process.env.SIGNATURE_PORT || 3000);
 const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/signaturebroker';
 const adminKey = process.env.ADMIN_API_KEY || '';
 const adminUsername = process.env.ADMIN_USERNAME || 'insurance';
@@ -21,6 +21,7 @@ const quoteEmailFrom = process.env.QUOTE_EMAIL_FROM || 'Signature Broker <quotes
 const rateLimits = new Map();
 const sessions = new Map();
 let db;
+let dbConnectionPromise;
 
 // const seedProducts = [
 //   { id: 'motor-comprehensive', name: 'Motor Comprehensive', description: 'Cover for accidental damage, fire, theft and third-party liability.', active: true, fields: [
@@ -75,6 +76,9 @@ function sameOrigin(req) { const origin = req.headers.origin; if (!origin) retur
 
 async function getDb() { if (!db) throw new Error('Database not connected'); return db; }
 async function connectDB() {
+  if (db) return db;
+  if (dbConnectionPromise) return dbConnectionPromise;
+  dbConnectionPromise = (async () => {
   const client = await MongoClient.connect(mongoUri);
   db = client.db();
   await Promise.all([
@@ -90,6 +94,9 @@ async function connectDB() {
   //   console.log('Seed data inserted into MongoDB.');
   // }
   console.log('Connected to MongoDB.');
+  return db;
+  })();
+  return dbConnectionPromise;
 }
 
 function normalizeProduct(input, existingId = '') {
@@ -291,11 +298,28 @@ async function api(req, res, url) {
 }
 
 async function staticFile(req, res, url) { let pathname = decodeURIComponent(url.pathname); if (pathname === '/') pathname = '/index.html'; const resolved = normalize(join(publicDir, pathname)); if (!resolved.startsWith(publicDir)) return send(res, 403, { error: 'Forbidden.' }); try { const info = await stat(resolved); if (!info.isFile()) throw Object.assign(new Error(), { code: 'ENOENT' }); const content = await readFile(resolved); res.writeHead(200, { ...securityHeaders, 'Content-Type': mimeTypes[extname(resolved)] || 'application/octet-stream', 'Cache-Control': extname(pathname) === '.html' ? 'no-cache' : 'public, max-age=31536000, immutable' }); res.end(content); } catch (error) { if (error.code !== 'ENOENT') throw error; const content = await readFile(join(publicDir, 'index.html')); res.writeHead(200, { ...securityHeaders, 'Content-Type': mimeTypes['.html'], 'Cache-Control': 'no-cache' }); res.end(content); } }
-const server = createServer(async (req, res) => { try { const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`); if (url.pathname.startsWith('/api/')) await api(req, res, url); else if (req.method === 'GET' || req.method === 'HEAD') await staticFile(req, res, url); else send(res, 405, { error: 'Method not allowed.' }); } catch (error) { console.error(error); const status = error.message === 'BODY_TOO_LARGE' ? 413 : error.message === 'INVALID_JSON' ? 400 : 500; send(res, status, { error: status === 500 ? 'Something went wrong.' : 'Invalid request.' }); } });
+export async function handleRequest(req, res) {
+  try {
+    const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+    if (url.pathname.startsWith('/api/')) {
+      await connectDB();
+      await api(req, res, url);
+    } else if (req.method === 'GET' || req.method === 'HEAD') {
+      await staticFile(req, res, url);
+    } else send(res, 405, { error: 'Method not allowed.' });
+  } catch (error) {
+    console.error(error);
+    const status = error.message === 'BODY_TOO_LARGE' ? 413 : error.message === 'INVALID_JSON' ? 400 : 500;
+    send(res, status, { error: status === 500 ? 'Something went wrong.' : 'Invalid request.' });
+  }
+}
 
-connectDB().then(() => {
-  server.listen(port, () => console.log(`Signature Broker is running on http://localhost:${port}`));
-}).catch((error) => {
-  console.error('Failed to connect to MongoDB:', error);
-  process.exit(1);
-});
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const server = createServer(handleRequest);
+  connectDB().then(() => {
+    server.listen(port, () => console.log(`Signature Broker is running on http://localhost:${port}`));
+  }).catch((error) => {
+    console.error('Failed to connect to MongoDB:', error);
+    process.exit(1);
+  });
+}
