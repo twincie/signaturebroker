@@ -1,0 +1,417 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="robots" content="noindex,nofollow" />
+    <title>Signature Broker Admin</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="admin.css" />
+  </head>
+  <body>
+    <main id="login-view" class="login-shell">
+      <section class="login-card">
+        <a class="admin-brand" href="/">
+          <span>S</span>
+          <b>
+            Signature
+            <em>Broker</em>
+          </b>
+        </a>
+        <p class="kicker">ADMINISTRATION</p>
+        <h1>Welcome back.</h1>
+        <p>Sign in to manage products, insurer rates and quote rules.</p>
+        <form id="login-form">
+          <label>
+            Username
+            <input name="username" autocomplete="username" required />
+          </label>
+          <label>
+            Password
+            <input name="password" type="password" autocomplete="current-password" required />
+          </label>
+          <button type="submit">
+            Sign in
+            <span>→</span>
+          </button>
+          <p class="status" role="status"></p>
+        </form>
+        <small>Change the default credentials before production.</small>
+      </section>
+    </main>
+    <main id="dashboard-view" class="dashboard" hidden>
+      <aside>
+        <a class="admin-brand light" href="/">
+          <span>S</span>
+          <b>
+            Signature
+            <em>Broker</em>
+          </b>
+        </a>
+        <nav>
+          <button class="nav-item active">
+            ◫
+            <span>Products & rates</span>
+          </button>
+          <button class="nav-item" id="quotes-nav">
+            ◎
+            <span>Quote requests</span>
+          </button>
+        </nav>
+        <div class="admin-user">
+          <div>I</div>
+          <p>
+            <b>insurance</b>
+            <span>Administrator</span>
+          </p>
+          <button id="logout" title="Log out">↗</button>
+        </div>
+      </aside>
+      <section class="workspace">
+        <header>
+          <div>
+            <p class="kicker">PRODUCT CATALOGUE</p>
+            <h1>Insurance products</h1>
+            <p>Configure the questions customers answer and how each insurer calculates its premium.</p>
+          </div>
+          <button class="primary" id="new-product">+ New product</button>
+        </header>
+        <div id="product-view">
+          <div class="toolbar">
+            <input id="search" placeholder="Search products" />
+            <span id="product-count"></span>
+          </div>
+          <div id="product-list" class="product-list"></div>
+        </div>
+        <div id="quotes-view" hidden>
+          <div class="toolbar">
+            <h2>Recent quote requests</h2>
+            <button class="secondary" id="refresh-quotes">Refresh</button>
+          </div>
+          <p class="quote-banner" id="quote-banner" hidden></p>
+          <div id="quote-list" class="quote-list"></div>
+        </div>
+      </section>
+    </main>
+    <dialog id="product-dialog">
+      <form id="product-form">
+        <div class="dialog-head">
+          <div>
+            <p class="kicker">PRODUCT CONFIGURATION</p>
+            <h2 id="dialog-title">New insurance product</h2>
+          </div>
+          <button type="button" class="close" aria-label="Close">×</button>
+        </div>
+        <div class="tabs">
+          <button type="button" class="tab active" data-tab="basics">Basics</button>
+          <button type="button" class="tab" data-tab="fields">Customer fields</button>
+          <button type="button" class="tab" data-tab="rates">Insurer rates</button>
+          <button type="button" class="tab" data-tab="cover">Cover details</button>
+          <button type="button" class="tab" data-tab="email">Emails</button>
+        </div>
+        <div class="tab-panel active" data-panel="basics">
+          <div class="two">
+            <label>
+              Product name
+              <input name="name" required placeholder="e.g. Family Health Plus" />
+            </label>
+            <label>
+              Product ID
+              <input name="id" required pattern="[a-z0-9-]+" placeholder="family-health-plus" />
+            </label>
+          </div>
+          <label>
+            Description
+            <textarea name="description" rows="4" placeholder="Explain the cover in clear customer language"></textarea>
+          </label>
+          <label class="switch">
+            <input name="active" type="checkbox" checked />
+            <span></span>
+            Available to customers
+          </label>
+        </div>
+        <div class="tab-panel" data-panel="fields">
+          <div class="panel-intro">
+            <div>
+              <h3>Quote questions</h3>
+              <p>These fields appear after a customer selects this product.</p>
+            </div>
+            <button type="button" class="secondary" id="add-field">+ Add field</button>
+          </div>
+          <div id="fields-list"></div>
+        </div>
+        <div class="tab-panel" data-panel="rates">
+          <div class="panel-intro">
+            <div>
+              <h3>Insurer rate cards</h3>
+              <p>Add one rate card per insurer or plan.</p>
+            </div>
+            <button type="button" class="secondary" id="add-rate">+ Add rate</button>
+          </div>
+          <div id="rates-list"></div>
+        </div>
+        <div class="tab-panel" data-panel="cover">
+          <div class="two">
+            <label>
+              Benefits
+              <small>One per line</small>
+              <textarea name="benefits" rows="8"></textarea>
+            </label>
+            <label>
+              Exclusions
+              <small>One per line</small>
+              <textarea name="exclusions" rows="8"></textarea>
+            </label>
+          </div>
+        </div>
+        <div class="tab-panel" data-panel="email">
+          <div class="panel-intro">
+            <div>
+              <h3>Quote email workflow</h3>
+              <p>Decide what happens when a customer requests a quote for this product.</p>
+            </div>
+          </div>
+          <div class="email-config">
+            <label class="switch">
+              <input name="notifyTeam" type="checkbox" />
+              <span></span>
+              Email the brokerage team when a request comes in
+            </label>
+            <label class="switch">
+              <input name="sendEmailImmediately" type="checkbox" />
+              <span></span>
+              Email the customer automatically when the request arrives
+            </label>
+            <div class="mode-field" hidden>
+              <b>When sending automatically, send:</b>
+              <label class="check">
+                <input name="immediateEmailMode" type="radio" value="acknowledgement" checked />
+                An acknowledgement only, no premium
+              </label>
+              <label class="check">
+                <input name="immediateEmailMode" type="radio" value="quote" />
+                The calculated quote
+              </label>
+            </div>
+            <label class="switch">
+              <input name="requireAdminMessage" type="checkbox" />
+              <span></span>
+              Require an admin message before a manual send
+            </label>
+          </div>
+          <h3>Customer email</h3>
+          <label>
+            Subject
+            <input name="customerSubject" maxlength="160" placeholder="Your insurance quote — {{reference}}" />
+          </label>
+          <label>
+            Body
+            <small>Leave blank to use the built-in template</small>
+            <textarea name="customerBody" rows="10"></textarea>
+          </label>
+          <h3>Team notification email</h3>
+          <label>
+            Subject
+            <input name="teamSubject" maxlength="160" placeholder="New quote request — {{reference}}" />
+          </label>
+          <label>
+            Body
+            <small>Leave blank to use the built-in template</small>
+            <textarea name="teamBody" rows="10"></textarea>
+          </label>
+          <p class="template-hint">
+            Placeholders:
+            <code>{{name}}</code>
+            <code>{{email}}</code>
+            <code>{{phone}}</code>
+            <code>{{reference}}</code>
+            <code>{{product}}</code>
+            <code>{{requestedDate}}</code>
+            <code>{{adminMessage}}</code>
+            <code>{{details}}</code>
+            <code>{{offers}}</code>
+          </p>
+          <p class="template-hint">
+            <code>{{details}}</code>
+            lists the customer’s answers and
+            <code>{{offers}}</code>
+            lists calculated premiums. Acknowledgement emails always suppress
+            <code>{{offers}}</code>
+            .
+          </p>
+        </div>
+        <footer>
+          <p class="status" role="status"></p>
+          <button type="button" class="danger" id="delete-product">Delete</button>
+          <div>
+            <button type="button" class="secondary close">Cancel</button>
+            <button type="submit" class="primary">Save product</button>
+          </div>
+        </footer>
+      </form>
+    </dialog>
+
+    <dialog id="preview-dialog">
+      <div class="dialog-head">
+        <div>
+          <p class="kicker">EMAIL PREVIEW</p>
+          <h2 id="preview-title">What the customer will receive</h2>
+          <p id="preview-note" class="dialog-note"></p>
+        </div>
+        <button type="button" class="close" aria-label="Close">×</button>
+      </div>
+      <div class="preview-meta">
+        <p>
+          <b>To</b>
+          <span id="preview-to"></span>
+        </p>
+        <p>
+          <b>Subject</b>
+          <span id="preview-subject"></span>
+        </p>
+      </div>
+      <div class="preview-compose">
+        <label for="preview-message" id="preview-message-label">Optional message for the customer</label>
+        <textarea id="preview-message" rows="3" placeholder="Anything you want to add to the email, for example why this rate suits them."></textarea>
+        <p class="preview-compose-hint">The email below refreshes as you type. Edit until it reads correctly, then send.</p>
+      </div>
+      <iframe id="preview-frame" title="Email preview" sandbox></iframe>
+      <details class="preview-text">
+        <summary>Plain text version</summary>
+        <pre id="preview-plain"></pre>
+      </details>
+      <footer class="preview-footer">
+        <p class="preview-status" id="preview-status"></p>
+        <div>
+          <button type="button" class="close secondary" id="preview-cancel">Cancel</button>
+          <button type="button" id="preview-send">Send email</button>
+        </div>
+      </footer>
+    </dialog>
+
+    <template id="field-template">
+      <div class="config-card field-row">
+        <div class="card-title">
+          <b>Customer field</b>
+          <button type="button" class="remove">Remove</button>
+        </div>
+        <div class="four">
+          <label>
+            Label
+            <input data-key="label" required placeholder="Date of birth" />
+          </label>
+          <label>
+            Field key
+            <input data-key="key" required placeholder="dateOfBirth" />
+          </label>
+          <label>
+            Type
+            <select data-key="type">
+              <option value="text">Text</option>
+              <option value="number">Number</option>
+              <option value="currency">Currency</option>
+              <option value="date">Date</option>
+              <option value="country">Country</option>
+              <option value="select">Dropdown</option>
+            </select>
+          </label>
+          <label class="check">
+            <input data-key="required" type="checkbox" />
+            Required
+          </label>
+        </div>
+        <div class="four limits-field">
+          <label>
+            Minimum
+            <input data-key="min" type="number" placeholder="e.g. 100000" />
+          </label>
+          <label>
+            Maximum
+            <input data-key="max" type="number" placeholder="e.g. 100000000" />
+          </label>
+          <label>
+            Placeholder
+            <input data-key="placeholder" placeholder="e.g. 5,000,000" />
+          </label>
+        </div>
+        <label class="options-field">
+          Dropdown options
+          <small>One per line: value | Label</small>
+          <textarea data-key="options" rows="3"></textarea>
+        </label>
+      </div>
+    </template>
+    <template id="rate-template">
+      <div class="config-card rate-row">
+        <div class="card-title">
+          <b>Insurer rate</b>
+          <button type="button" class="remove">Remove</button>
+        </div>
+        <div class="four">
+          <label>
+            Insurer
+            <input data-key="insurer" required placeholder="Insurer name" />
+          </label>
+          <label>
+            Pricing model
+            <select data-key="model">
+              <option value="fixed">Fixed amount</option>
+              <option value="percentage">Percentage of value</option>
+              <option value="age-bands">Age bands</option>
+              <option value="underwriting">Underwriting only</option>
+            </select>
+          </label>
+          <label>
+            Currency
+            <input data-key="currency" value="NGN" />
+          </label>
+          <label class="check">
+            <input data-key="active" type="checkbox" checked />
+            Active
+          </label>
+        </div>
+        <div class="model-settings">
+          <label data-for="fixed">
+            Fixed premium
+            <input data-key="amount" type="number" min="0" />
+          </label>
+          <label data-for="percentage">
+            Percentage rate
+            <input data-key="percentage" type="number" min="0" step="0.01" placeholder="5" />
+          </label>
+          <label data-for="age-bands">
+            Age bands
+            <small>One per line: minimum-maximum: amount</small>
+            <textarea data-key="ageBands" rows="5" placeholder="0-17: 50000&#10;18-35: 89500"></textarea>
+          </label>
+        </div>
+        <div class="four">
+          <label>
+            Excess
+            <input data-key="excess" placeholder="e.g. 10% per claim" />
+          </label>
+          <label>
+            Waiting period
+            <input data-key="waitingPeriod" placeholder="e.g. 3 months" />
+          </label>
+          <label>
+            Valid from
+            <input data-key="validFrom" type="date" />
+          </label>
+          <label>
+            Valid to
+            <input data-key="validTo" type="date" />
+          </label>
+        </div>
+        <label>
+          Risk loadings
+          <small>One per line: field = value : percentage</small>
+          <textarea data-key="loadings" rows="3" placeholder="usage = commercial : 10"></textarea>
+        </label>
+      </div>
+    </template>
+    <script type="module" src="/admin.js"></script>
+  </body>
+</html>

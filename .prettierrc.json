@@ -1,0 +1,14 @@
+{
+  "printWidth": 140,
+  "singleQuote": true,
+  "semi": true,
+  "trailingComma": "es5",
+  "tabWidth": 2,
+  "arrowParens": "always",
+  "overrides": [
+    { "files": "*.html", "options": { "printWidth": 200, "htmlWhitespaceSensitivity": "ignore" } },
+    { "files": "*.css", "options": { "printWidth": 160 } },
+    { "files": "*.md", "options": { "printWidth": 100, "proseWrap": "preserve" } },
+    { "files": "*.json", "options": { "printWidth": 120 } }
+  ]
+}
