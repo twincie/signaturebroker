@@ -48,7 +48,7 @@ a {
 .brand {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 0;
   font: 800 20px 'Manrope';
 }
 .brand > span:last-child > span {
